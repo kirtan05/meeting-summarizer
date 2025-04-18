@@ -45,7 +45,7 @@ const theme = createTheme({
 
 // --- Configuration ---
 // IMPORTANT: Replace with your actual backend URL
-const API_BASE_URL = 'http://localhost:8000'; // Or your deployed backend URL
+const API_BASE_URL = 'https://e9ed-184-105-162-170.ngrok-free.app'; // Or your deployed backend URL
 // ---------------------
 
 function App() {
