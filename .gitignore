@@ -1,1 +1,8 @@
 martin/*
+.env
+backend copy.ipynb
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db

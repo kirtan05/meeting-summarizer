@@ -1,11 +1,14 @@
-# git+https://github.com/huggingface/transformers@v4.49.0-Gemma-3
-# datasets
-# torch
-# accelerate
+git+https://github.com/huggingface/transformers@v4.49.0-Gemma-3
+datasets
+torch
+accelerate
 fastapi
 uvicorn
-# peft
+peft
 aiofiles
 python-multipart
 azure-cognitiveservices-speech
 ngrok
+python-dotenv
+requests
+pyngrok
