@@ -12,7 +12,7 @@ import {
   CardContent,
   CardActions,
   Button,
-  TextField,
+  TextField, // Make sure TextField is imported
   CircularProgress,
   Snackbar,
   Alert,
@@ -51,7 +51,7 @@ const API_BASE_URL = 'https://e9ed-184-105-162-170.ngrok-free.app'; // Or your d
 function App() {
   const [audioFile, setAudioFile] = useState(null);
   const [textFile, setTextFile] = useState(null);
-  const [email, setEmail] = useState(''); // Kept for consistency, though email sending is off
+  const [email, setEmail] = useState(''); // State for email input
   const [isLoading, setIsLoading] = useState(false);
   const [summary, setSummary] = useState('');
   const [showSummaryModal, setShowSummaryModal] = useState(false);
@@ -76,6 +76,7 @@ function App() {
     }
   };
 
+  // Function to handle changes in the email input field
   const handleEmailChange = (event) => {
     setEmail(event.target.value);
   };
@@ -87,10 +88,11 @@ function App() {
      } else if (fileType === 'text') {
         setTextFile(null);
         if(textInputRef.current) textInputRef.current.value = '';
-     } else { // clear all
+     } else { // clear all (might not be needed now)
         setAudioFile(null);
         setTextFile(null);
-        setEmail('');
+        // Keep email input value unless explicitly cleared
+        // setEmail('');
         if(audioInputRef.current) audioInputRef.current.value = '';
         if(textInputRef.current) textInputRef.current.value = '';
      }
@@ -105,37 +107,41 @@ function App() {
       setNotification({ open: true, message: `Please select a ${uploadType} file.`, severity: 'warning' });
       return;
     }
-    // Basic email validation (optional)
+
+    // Optional: Add stricter email validation if needed
     // if (!email || !/\S+@\S+\.\S+/.test(email)) {
-    //   setNotification({ open: true, message: 'Please enter a valid email address.', severity: 'warning' });
-    //   return;
+    //    setNotification({ open: true, message: 'Please enter a valid email address.', severity: 'warning' });
+    //    return;
     // }
 
+
     setIsLoading(true);
-    setSummary(''); // Clear previous summary
-    setNotification({ open: false, message: '', severity: 'info' }); // Close previous notifications
+    setSummary('');
+    setNotification({ open: false, message: '', severity: 'info' });
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('email', email || "not_provided@example.com"); // Send placeholder if empty
+    // *** Include the email from state in the FormData ***
+    formData.append('email', email || "not_provided@example.com"); // Use entered email or placeholder
 
     try {
       const response = await axios.post(`${API_BASE_URL}${endpoint}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+           // Add ngrok skip browser warning header if using ngrok free tier
+           'ngrok-skip-browser-warning': 'true'
         },
-        // Optional: Add timeout
-        // timeout: 300000, // 5 minutes timeout for potentially long processing
+        // timeout: 300000, // 5 minutes timeout
       });
 
-      // Assuming backend returns { message: "summary_content" } for both endpoints
       if (response.data && response.data.message) {
          setSummary(response.data.message);
          setShowSummaryModal(true);
          setNotification({ open: true, message: 'Summary generated successfully!', severity: 'success' });
-         clearInputs(uploadType); // Clear the specific input on success
+         clearInputs(uploadType);
+         // Decide if you want to clear the email field too after success
+         // setEmail('');
       } else {
-         // Handle cases where the response format is unexpected
          console.error("Unexpected response format:", response.data);
          setNotification({ open: true, message: 'Received an unexpected response from the server.', severity: 'error' });
       }
@@ -143,19 +149,19 @@ function App() {
     } catch (error) {
       console.error(`Error uploading ${uploadType} file:`, error);
       let errorMessage = `Failed to process ${uploadType} file.`;
-      if (error.response) {
-        // Server responded with a status code outside 2xx range
-        errorMessage = error.response.data?.detail || error.response.statusText || errorMessage;
-         console.error('Error Response Data:', error.response.data);
-         console.error('Error Response Status:', error.response.status);
-      } else if (error.request) {
-        // Request was made but no response received (network error, backend down)
-        errorMessage = 'Network error or server is not responding.';
-         console.error('Error Request:', error.request);
-      } else {
-        // Something happened in setting up the request
-        errorMessage = `Error: ${error.message}`;
-      }
+       // Improved error message handling
+       if (error.message === 'Network Error') {
+           errorMessage = 'Network error: Cannot connect to the server. Please check the backend URL and your connection.';
+       } else if (error.code === 'ECONNABORTED') {
+           errorMessage = 'The request timed out. The server might be busy or the file is too large.';
+       } else if (error.response) {
+           errorMessage = `Server error: ${error.response.status} - ${error.response.data?.detail || error.response.statusText}`;
+           console.error('Error Response Data:', error.response.data);
+       } else if (error.request) {
+           errorMessage = 'No response received from the server. It might be down or unreachable.';
+       } else {
+           errorMessage = `An unexpected error occurred: ${error.message}`;
+       }
       setNotification({ open: true, message: errorMessage, severity: 'error' });
     } finally {
       setIsLoading(false);
@@ -171,8 +177,6 @@ function App() {
 
   const handleCloseModal = () => {
     setShowSummaryModal(false);
-    // Optionally clear summary when modal closes
-    // setSummary('');
   };
 
   return (
@@ -183,7 +187,6 @@ function App() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Meeting Summarizer AI
           </Typography>
-          {/* Example: Add a link to your GitHub repo */}
           <Tooltip title="View Source on GitHub (Example)">
              <IconButton
                 color="inherit"
@@ -198,11 +201,13 @@ function App() {
       </AppBar>
 
       <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+        {/* Wrap upload cards and email input in a parent Grid container */}
         <Grid container spacing={4} justifyContent="center">
+
           {/* Audio Upload Card */}
           <Grid item xs={12} md={6}>
-            <Card elevation={3}>
-              <CardContent>
+            <Card elevation={3} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}> {/* Ensure cards have same height */}
+              <CardContent sx={{ flexGrow: 1 }}> {/* Allow content to grow */}
                 <Typography variant="h5" component="div" gutterBottom>
                   Upload Audio
                 </Typography>
@@ -211,7 +216,7 @@ function App() {
                 </Typography>
                 <Button
                   variant="contained"
-                  component="label" // Makes the button act like a label for the hidden input
+                  component="label"
                   startIcon={<AudioFileIcon />}
                   disabled={isLoading}
                   fullWidth
@@ -222,22 +227,22 @@ function App() {
                     ref={audioInputRef}
                     type="file"
                     hidden
-                    accept="audio/*" // Be more specific if needed: "audio/wav, audio/mpeg"
+                    accept="audio/*"
                     onChange={(e) => handleFileChange(e, 'audio')}
                   />
                 </Button>
                 {audioFile && (
-                  <Typography variant="body2" sx={{ mb: 2, fontStyle: 'italic' }}>
+                  <Typography variant="body2" sx={{ mb: 2, fontStyle: 'italic', wordBreak: 'break-all' }}> {/* Allow long filenames to wrap */}
                     Selected: {audioFile.name}
                   </Typography>
                 )}
                  {!audioFile && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic', height: '1.4375em' }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic', height: 'calc(1.4375em + 8px)' }}> {/* Adjust height to roughly match line-height + margin */}
                         No audio file selected
                     </Typography>
                 )}
               </CardContent>
-              <CardActions sx={{ justifyContent: 'flex-end', p: 2, pt: 0 }}>
+              <CardActions sx={{ justifyContent: 'flex-end', p: 2, pt: 0, mt: 'auto' }}> {/* Push actions to bottom */}
                 <Button
                   variant="contained"
                   color="primary"
@@ -253,8 +258,8 @@ function App() {
 
           {/* Text Upload Card */}
           <Grid item xs={12} md={6}>
-            <Card elevation={3}>
-              <CardContent>
+             <Card elevation={3} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}> {/* Ensure cards have same height */}
+              <CardContent sx={{ flexGrow: 1 }}> {/* Allow content to grow */}
                 <Typography variant="h5" component="div" gutterBottom>
                   Upload Transcript
                 </Typography>
@@ -279,17 +284,17 @@ function App() {
                   />
                 </Button>
                  {textFile && (
-                  <Typography variant="body2" sx={{ mb: 2, fontStyle: 'italic' }}>
+                  <Typography variant="body2" sx={{ mb: 2, fontStyle: 'italic', wordBreak: 'break-all' }}> {/* Allow long filenames to wrap */}
                     Selected: {textFile.name}
                   </Typography>
                  )}
                   {!textFile && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic', height: '1.4375em' }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic', height: 'calc(1.4375em + 8px)' }}> {/* Adjust height to roughly match line-height + margin */}
                         No text file selected
                     </Typography>
                 )}
               </CardContent>
-              <CardActions sx={{ justifyContent: 'flex-end', p: 2, pt: 0 }}>
+              <CardActions sx={{ justifyContent: 'flex-end', p: 2, pt: 0, mt: 'auto' }}> {/* Push actions to bottom */}
                 <Button
                   variant="contained"
                   color="primary"
@@ -303,53 +308,50 @@ function App() {
             </Card>
           </Grid>
 
-           {/* Optional Email Input - Keep if you might re-enable email */}
-           {/* <Grid item xs={12}>
+          {/* --- UNCOMMENTED EMAIL INPUT FIELD --- */}
+          <Grid item xs={12}>
              <TextField
                fullWidth
                label="Email Address (Optional)"
                variant="outlined"
                type="email"
                value={email}
-               onChange={handleEmailChange}
+               onChange={handleEmailChange} // Make sure this handler is defined
                disabled={isLoading}
-               helperText="Enter your email if you want results sent (feature currently disabled)."
+               helperText="Enter email (optional - backend feature for sending email might be disabled)." // Updated helper text
+               sx={{ mt: 2 }} // Add some margin top for spacing
              />
-           </Grid> */}
+          </Grid>
+          {/* ------------------------------------- */}
 
-        </Grid>
+        </Grid> {/* End of parent Grid container */}
 
         {/* Summary Display Modal */}
         <Dialog
             open={showSummaryModal}
             onClose={handleCloseModal}
-            scroll="paper" // Allows content scrolling
+            scroll="paper"
             aria-labelledby="summary-dialog-title"
             aria-describedby="summary-dialog-description"
-            maxWidth="md" // Adjust as needed
-            fullWidth // Takes up modal max width
+            maxWidth="md"
+            fullWidth
         >
             <DialogTitle id="summary-dialog-title">
                 Meeting Summary
                 <IconButton
                   aria-label="close"
                   onClick={handleCloseModal}
-                  sx={{
-                    position: 'absolute',
-                    right: 8,
-                    top: 8,
-                    color: (theme) => theme.palette.grey[500],
-                  }}
+                  sx={{ position: 'absolute', right: 8, top: 8, color: (theme) => theme.palette.grey[500] }}
                 >
                   <CloseIcon />
                 </IconButton>
             </DialogTitle>
-            <DialogContent dividers={true}> {/* Adds dividers */}
-                 {/* Use Box with whiteSpace for preserving formatting */}
-                 <Box sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', p: 1, border: '1px solid #eee', borderRadius: '4px', background: '#f9f9f9' }}>
+            <DialogContent dividers={true}>
+                 <Box sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', p: 1, border: '1px solid #eee', borderRadius: '4px', background: '#f9f9f9', maxHeight: '60vh', overflowY: 'auto' }}> {/* Added max height and scroll */}
                    <DialogContentText
+                       component="div" // Use div instead of p for better pre-wrap handling inside Box
                        id="summary-dialog-description"
-                       tabIndex={-1} // For accessibility
+                       tabIndex={-1}
                    >
                       {summary || "No summary generated."}
                    </DialogContentText>
@@ -365,12 +367,11 @@ function App() {
         {/* Notification Snackbar */}
         <Snackbar
           open={notification.open}
-          autoHideDuration={6000} // Hide after 6 seconds
+          autoHideDuration={6000}
           onClose={handleCloseNotification}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }} // Position
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
-          {/* Severity prop controls the color */}
-          <Alert onClose={handleCloseNotification} severity={notification.severity} sx={{ width: '100%' }}>
+          <Alert onClose={handleCloseNotification} severity={notification.severity} sx={{ width: '100%' }} variant="filled"> {/* Use filled variant for better visibility */}
             {notification.message}
           </Alert>
         </Snackbar>
@@ -381,13 +382,7 @@ function App() {
        <Box component="footer" sx={{ bgcolor: 'background.paper', py: 3, mt: 'auto' }}>
         <Container maxWidth="lg">
           <Typography variant="body2" color="text.secondary" align="center">
-            {'© '}
-            {new Date().getFullYear()}
-            {' Meeting Summarizer AI. '}
-             {/* Add more footer info if needed */}
-             {/* <Link color="inherit" href="#">
-               Privacy Policy
-             </Link> */}
+            {'© '} {new Date().getFullYear()} {' Meeting Summarizer AI.'}
           </Typography>
         </Container>
       </Box>
