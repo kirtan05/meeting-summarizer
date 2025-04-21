@@ -1,7 +1,7 @@
 # 🧠 Meeting Summarizer (NLP Project)
 
 A full-stack NLP project for generating high-quality meeting summaries using transformer models. It includes dataset preparation, model fine-tuning, backend deployment, and a frontend interface. The entire stack leverages Groq + LLaMA for inference and Gemma for fine-tuning.
-
+You can check it out in a [Video Demo][https://youtu.be/N85zmYQjBEA] !
 ---
 
 ## 📁 Project Structure
