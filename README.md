@@ -133,6 +133,25 @@ gmail_password=   # App password only
 
 ---
 
+## 📊 Evaluation Metrics
+
+| Metric           | Score   | Description                                                                 |
+|------------------|---------|-----------------------------------------------------------------------------|
+| **ROUGE-1**      | 0.566   | Good unigram overlap (key words).                                           |
+| **ROUGE-2**      | 0.345   | Strong bigram/phrase-level fluency.                                         |
+| **ROUGE-Lsum**   | 0.546   | Captures logical sentence structure and summary coherence.                  |
+| **BLEU**         | 0.297   | Good n-gram overlap; reflects reference style and vocabulary.               |
+| 1–4 Gram Prec.   | 0.52 / 0.33 / 0.24 / 0.19 | Expected gradual drop; longer n-grams are harder to match.      |
+| **METEOR**       | 0.483   | Balances precision & recall, accounts for synonyms/stemming.               |
+| **BERTScore F1** | 0.899   | Indicates excellent semantic similarity between prediction and reference.   |
+
+---
+
+## 📽️ Presentation
+
+Want to understand our methodology better? Check out our [Project Presentation](https://drive.google.com/file/d/1N0G7QRdVekMjk43ePiktin5FW4ik_sw4/view?usp=sharing).
+
+---
 ## 📸 Architecture
 
 ![architecture](assets/architecture.png)
