@@ -143,6 +143,6 @@ gmail_password=   # App password only
 
 ---
 
-**Made with 🤍 by Kirtan**
+**Made with 🤍 by Kirtan, Martin and Siddhant**
 
 ```
